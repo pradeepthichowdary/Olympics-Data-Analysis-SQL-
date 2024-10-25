@@ -1,0 +1,265 @@
+-- Combine winter_data and summer_data into a unified dataset
+CREATE VIEW games_data AS
+SELECT * FROM winter_data
+UNION
+SELECT * FROM summer_data;
+
+-- Query 1: Number of missing values in each column
+SELECT 
+    COUNT(*) - COUNT(Name) AS Missing_Name, 
+    COUNT(*) - COUNT(Sex) AS Missing_Sex, 
+    COUNT(*) - COUNT(Age) AS Missing_Age,
+    COUNT(*) - COUNT(Team) AS Missing_Team, 
+    COUNT(*) - COUNT(NOC) AS Missing_NOC, 
+    COUNT(*) - COUNT(Games) AS Missing_Games,
+    COUNT(*) - COUNT(Year) AS Missing_Year,
+    COUNT(*) - COUNT(Season) AS Missing_Season,
+    COUNT(*) - COUNT(City) AS Missing_City, 
+    COUNT(*) - COUNT(Sport) AS Missing_Sport,
+    COUNT(*) - COUNT(Event) AS Missing_Event, 
+    COUNT(*) - COUNT(Medal) AS Missing_Medal,
+    COUNT(*) AS Total_Records
+FROM 
+    games_data;
+
+-- Query 2: Percentage of records with age values, grouped by year
+SELECT 
+    Year,
+    1.0 * COUNT(Age) / COUNT(*) AS Age_Entered_Percentage, 
+    COUNT(*) AS Total_Records
+FROM 
+    games_data
+GROUP BY
+    Year
+ORDER BY
+    Year ASC;
+
+-- Query 3: Percentage of records with age values, separated by sex (all years)
+SELECT 
+    Sex, 
+    1.0 * COUNT(Age) / COUNT(*) AS Age_Entered_Percentage, 
+    COUNT(*) AS Total_Records
+FROM 
+    games_data 
+GROUP BY 
+    Sex 
+ORDER BY 
+    Age_Entered_Percentage ASC;
+
+-- Query 4: Percentage of records with age values, separated by sex (1960 and later)
+SELECT 
+    Sex, 
+    1.0 * COUNT(Age) / COUNT(*) AS Age_Entered_Percentage, 
+    COUNT(*) AS Total_Records
+FROM 
+    games_data 
+WHERE 
+    Year >= 1960 
+GROUP BY 
+    Sex 
+ORDER BY 
+    Age_Entered_Percentage ASC;
+
+-- Query 5: Percentage of records with age values, separated by season (all years)
+SELECT 
+    Season, 
+    1.0 * COUNT(Age) / COUNT(*) AS Age_Entered_Percentage, 
+    COUNT(*) AS Total_Records
+FROM 
+    games_data 
+GROUP BY 
+    Season 
+ORDER BY 
+    Age_Entered_Percentage ASC;
+
+-- Query 6: Percentage of records with age values, separated by season (1960 and later)
+SELECT 
+    Season, 
+    1.0 * COUNT(Age) / COUNT(*) AS Age_Entered_Percentage, 
+    COUNT(*) AS Total_Records
+FROM 
+    games_data 
+WHERE 
+    Year >= 1960 
+GROUP BY 
+    Season 
+ORDER BY 
+    Age_Entered_Percentage ASC;
+
+-- Query 7: Number of athletes competing in each Olympics
+SELECT 
+    Year,
+    Season,
+    Games,
+    COUNT(DISTINCT(Name)) AS Num_Athletes
+FROM 
+    games_data
+GROUP BY 
+    Year, Season, Games
+ORDER BY 
+    Year, Season;
+
+-- Query 8: Number of Olympics each athlete has competed in
+SELECT 
+    Name, 
+    COUNT(DISTINCT(Games)) AS Num_Olympics
+FROM 
+    games_data
+GROUP BY 
+    Name
+ORDER BY 
+    Num_Olympics DESC;
+
+-- Query 9: Number of athletes who competed in each number of Olympics
+WITH athlete_counts AS (
+    SELECT 
+        Name, 
+        COUNT(DISTINCT(Games)) AS Num_Olympics
+    FROM 
+        games_data
+    GROUP BY 
+        Name
+)
+SELECT 
+    Num_Olympics,
+    COUNT(*) AS Num_Athletes
+FROM 
+    athlete_counts
+GROUP BY 
+    Num_Olympics
+ORDER BY 
+    Num_Olympics;
+
+-- Query 10: Distribution of Olympic athletes by sex overall
+SELECT 
+    Sex,
+    COUNT(DISTINCT(Name)) AS Num_Athletes
+FROM 
+    games_data
+GROUP BY 
+    Sex
+ORDER BY 
+    Num_Athletes DESC;
+
+-- Query 11: Distribution of Olympic athletes by sex, separated by year, season, and age
+SELECT 
+    Year,
+    Season,
+    Sex,
+    COUNT(DISTINCT(Name)) AS Num_Athletes
+FROM 
+    games_data
+GROUP BY 
+    Year, Season, Sex
+ORDER BY 
+    Year, Season, Sex;
+
+-- Query 12: Age range and age distribution
+SELECT 
+    MIN(Age) AS Min_Age,
+    MAX(Age) AS Max_Age,
+    AVG(Age) AS Avg_Age
+FROM 
+    games_data
+WHERE 
+    Age IS NOT NULL;
+
+-- Query 13: Age ranges separated by year and season
+SELECT 
+    Year,
+    Season,
+    MIN(Age) AS Min_Age,
+    MAX(Age) AS Max_Age,
+    AVG(Age) AS Avg_Age
+FROM 
+    games_data
+WHERE 
+    Age IS NOT NULL
+GROUP BY 
+    Year, Season
+ORDER BY 
+    Year, Season;
+
+-- Query 14: Number of new teams each Olympic year
+SELECT 
+    Year,
+    COUNT(DISTINCT(Team)) AS Num_Teams
+FROM 
+    games_data
+GROUP BY 
+    Year
+ORDER BY 
+    Year;
+
+-- Query 15: Check if teams and NOCs are the same, and if any NOCs have more than one team
+SELECT 
+    NOC, 
+    COUNT(DISTINCT(Team)) AS Num_Teams
+FROM 
+    games_data
+GROUP BY 
+    NOC
+HAVING 
+    COUNT(DISTINCT(Team)) > 1;
+
+-- Query 16: Identify any missing Olympics in the dataset
+SELECT 
+    DISTINCT Year, Season
+FROM 
+    games_data
+ORDER BY 
+    Year, Season;
+
+-- Query 17: Count of how many times each city has hosted the Olympics
+SELECT 
+    City, 
+    COUNT(DISTINCT Games) AS Times_Hosted
+FROM 
+    games_data
+GROUP BY 
+    City
+ORDER BY 
+    Times_Hosted DESC;
+
+-- Query 18: Most recent Olympic year each city hosted
+SELECT 
+    City, 
+    MAX(Year) AS Last_Hosted_Year
+FROM 
+    games_data
+GROUP BY 
+    City
+ORDER BY 
+    Last_Hosted_Year DESC;
+
+-- Query 19: Cities that have held both Winter and Summer Olympics
+SELECT 
+    City
+FROM 
+    games_data
+GROUP BY 
+    City
+HAVING 
+    COUNT(DISTINCT Season) = 2;
+
+-- Query 20: New sports introduced in each Olympics
+SELECT 
+    Year, 
+    COUNT(DISTINCT Sport) AS Num_New_Sports
+FROM 
+    games_data
+GROUP BY 
+    Year
+ORDER BY 
+    Year;
+
+-- Query 21: Total sports included in each Olympics
+SELECT 
+    Year,
+    COUNT(DISTINCT Sport) AS Total_Sports
+FROM 
+    games_data
+GROUP BY 
+    Year
+ORDER BY 
+    Year;
